@@ -97,10 +97,7 @@ type fstStateV1 struct {
 }
 
 func (f *fstStateV1) isEncodedSingle() bool {
-	if f.data[f.top]>>7 > 0 {
-		return true
-	}
-	return false
+	return f.data[f.top]>>7 > 0
 }
 
 func (f *fstStateV1) at(data []byte, addr int) error {

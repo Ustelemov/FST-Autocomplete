@@ -160,8 +160,8 @@ func TestEncoderStateOneNotNextWithCommonInputNoValue(t *testing.T) {
 
 	// now look at the bytes produced
 	var want = []byte{
-		32,       // delta address packed
-		1<<4 | 0, // pack sizes
+		32,     // delta address packed
+		1 << 4, // pack sizes
 		oneTransition | encodeCommon('a'),
 	}
 	got := buf.Bytes()
@@ -201,8 +201,8 @@ func TestEncoderStateOneNotNextWithUncommonInputNoValue(t *testing.T) {
 
 	// now look at the bytes produced
 	var want = []byte{
-		32,       // delta address packed
-		1<<4 | 0, // pack sizes
+		32,     // delta address packed
+		1 << 4, // pack sizes
 		0xff,
 		oneTransition,
 	}
@@ -344,7 +344,7 @@ func TestEncoderStateManyWithNoValues(t *testing.T) {
 		'c', // encoded keys reversed
 		'b',
 		'a',
-		1<<4 | 0, // pack sizes
+		1 << 4, // pack sizes
 		encodeNumTrans(3),
 	}
 	got := buf.Bytes()
@@ -462,7 +462,7 @@ func testEncoderStateNTransitions(t *testing.T, n int) {
 		want = append(want, byte(i))
 	}
 	// append pack sizes
-	want = append(want, 1<<4|0)
+	want = append(want, 1<<4)
 
 	if n > 1<<6-1 {
 		// append separate byte of pack sizes

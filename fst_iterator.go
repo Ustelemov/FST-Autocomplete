@@ -193,7 +193,7 @@ func (i *FSTIterator) next(lastOffset int) error {
 	allowCompare := false
 
 OUTER:
-	for true {
+	for {
 		curr := i.statesStack[len(i.statesStack)-1]
 		autCurr := i.autStatesStack[len(i.autStatesStack)-1]
 

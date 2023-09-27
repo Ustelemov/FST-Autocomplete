@@ -678,3 +678,106 @@ func TestMaxWithSubstring(t *testing.T) {
 		t.Fatalf("expected max key 99, got %s", string(maxk))
 	}
 }
+
+func TestGetPrefix(t *testing.T) {
+	var buf bytes.Buffer
+	builder, err := New(&buf, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = builder.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fst, err := Load(buf.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// for empty fst no match for empty string expected
+	_, ok, err := fst.PrefixGet([]byte(""))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if ok {
+		t.Fatal()
+	}
+
+	buf.Reset()
+	builder, err = New(&buf, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	emptyValue := uint64(11)
+	exactValue := uint64(33)
+	prefixValue := uint64(77)
+
+	err = builder.Insert([]byte(""), emptyValue)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = builder.Insert([]byte("adidas1"), prefixValue)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = builder.Insert([]byte("adidas2"), exactValue)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = builder.Insert([]byte("adidaser"), exactValue*15)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = builder.Insert([]byte("adidassss"), exactValue*30)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = builder.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fst, err = Load(buf.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// for empty prefix find empty prfix
+	value, ok, err := fst.PrefixGet([]byte(""))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !ok || value != emptyValue {
+		t.Fatal(err)
+	}
+
+	// get exact match
+	value, ok, err = fst.PrefixGet([]byte("adidas2"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !ok || value != exactValue {
+		t.Fatal()
+	}
+
+	// get prefix match
+	value, ok, err = fst.PrefixGet([]byte("adi"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !ok || value != prefixValue {
+		t.Fatal()
+	}
+}

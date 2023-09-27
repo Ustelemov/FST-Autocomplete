@@ -95,6 +95,63 @@ func (f *FST) get(input []byte, prealloc fstState) (uint64, bool, error) {
 	return 0, false, nil
 }
 
+// PrefixGet returns the value associated with the key OR the value of the first key matched the input prefix. NOTE: a value of zero
+// does not imply the key does not exist, you must consult the second
+// return value as well.
+func (f *FST) PrefixGet(input []byte) (uint64, bool, error) {
+	return f.prefixGet(input, nil)
+}
+
+func (f *FST) prefixGet(input []byte, prealloc fstState) (uint64, bool, error) {
+	var total uint64
+
+	curr := f.decoder.getRoot()
+	state, err := f.decoder.stateAt(curr, prealloc)
+	if err != nil {
+		return 0, false, err
+	}
+
+	// iterate through input bytes, trying to reach maximum by prefix or get exact key
+	for _, c := range input {
+		_, curr, output := state.TransitionFor(c)
+		if curr == noneAddr {
+			return 0, false, nil
+		}
+
+		state, err = f.decoder.stateAt(curr, state)
+		if err != nil {
+			return 0, false, err
+		}
+
+		total += output
+	}
+
+	for !state.Final() {
+		if state.NumTransitions() == 0 { // bound check for TransitionAt (with empty prefix on empty fst - it's needed)
+			return 0, false, nil
+		}
+
+		nextTrans := state.TransitionAt(0)
+		_, curr, output := state.TransitionFor(nextTrans)
+		if curr == noneAddr {
+			return 0, false, nil
+		}
+
+		state, err = f.decoder.stateAt(curr, state)
+		if err != nil {
+			return 0, false, err
+		}
+
+		total += output
+	}
+
+	if state.Final() {
+		total += state.FinalOutput()
+		return total, true, nil
+	}
+	return 0, false, nil
+}
+
 // Version returns the encoding version used by this FST instance.
 func (f *FST) Version() int {
 	return f.ver
@@ -139,10 +196,7 @@ func (f *FST) IsMatch(addr int) bool {
 // CanMatch returns if this state can ever transition to a matching state
 // in this Automaton
 func (f *FST) CanMatch(addr int) bool {
-	if addr == noneAddr {
-		return false
-	}
-	return true
+	return addr != noneAddr
 }
 
 // WillAlwaysMatch returns if from this state the Automaton will always
