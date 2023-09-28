@@ -16,8 +16,17 @@ package vellum
 
 import (
 	"io"
+	"sync"
 
 	"github.com/bits-and-blooms/bitset"
+)
+
+var (
+	statePool = sync.Pool{
+		New: func() any {
+			return &fstStateV1{}
+		},
+	}
 )
 
 // FST is an in-memory representation of a finite state transducer,
@@ -99,7 +108,10 @@ func (f *FST) get(input []byte, prealloc fstState) (uint64, bool, error) {
 // does not imply the key does not exist, you must consult the second
 // return value as well.
 func (f *FST) PrefixGet(input []byte) (uint64, bool, error) {
-	return f.prefixGet(input, nil)
+	state := statePool.Get().(*fstStateV1)
+	defer statePool.Put(state)
+
+	return f.prefixGet(input, state)
 }
 
 func (f *FST) prefixGet(input []byte, prealloc fstState) (uint64, bool, error) {
